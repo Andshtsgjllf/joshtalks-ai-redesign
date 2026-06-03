@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Josh Talks AI — Voice AI Infrastructure</title>
+<meta name="description" content="Research-grade voice datasets, model evaluations, and speech AI infrastructure for frontier AI labs and enterprise teams. Built for India's linguistic diversity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,700;0,900;1,300;1,700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4ef;--bg2:#eeecea;--bg3:#e8e6e1;
+  --white:#fdfcfa;--black:#0a0a08;
+  --text:#1a1a16;--text2:#4a4a40;--muted:#8a8a7a;--faint:#b5b5a5;
+  --border:#d8d6cf;--border2:#c5c3ba;
+  --accent:#2a5cff;--green:#1a7a4a;--green-bg:#e8f5ee;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;cursor:none;}
+
+/* ── CURSOR (desktop only) ── */
+.cursor{position:fixed;width:10px;height:10px;background:var(--black);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;mix-blend-mode:multiply;}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1.5px solid var(--text2);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s;}
+body.cursor-hover .cursor{width:20px;height:20px;background:var(--accent);}
+body.cursor-hover .cursor-ring{width:52px;height:52px;border-color:var(--accent);}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:60px;background:rgba(245,244,239,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);transition:background .3s;gap:0;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;min-height:44px;flex-shrink:0;}
+.nav-logo svg{width:26px;height:26px;flex-shrink:0;}
+.nav-logo-text{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--black);letter-spacing:-.02em;}
+.nav-center{display:flex;align-items:center;flex:1;justify-content:center;}
+.nav-links-desktop{display:flex;align-items:center;gap:28px;list-style:none;}
+.nav-links-desktop a{font-size:.78rem;font-weight:500;color:var(--text2);text-decoration:none;letter-spacing:.01em;transition:color .15s;padding:6px 0;min-height:44px;display:flex;align-items:center;}
+.nav-links-desktop a:hover{color:var(--black);}
+.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.nav-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 20px;border-radius:100px;font-size:.78rem;font-weight:500;text-decoration:none;transition:all .2s;min-height:44px;white-space:nowrap;}
+.nav-btn-ghost{border:1px solid var(--border2);color:var(--text2);}
+.nav-btn-ghost:hover{border-color:var(--text);color:var(--black);}
+.nav-btn-fill{background:var(--black);color:var(--bg);}
+.nav-btn-fill:hover{background:#333;}
+
+/* ── HAMBURGER (mobile only) ── */
+.hamburger{display:none;flex-direction:column;gap:6px;cursor:pointer;padding:12px;width:48px;height:48px;align-items:center;justify-content:center;background:none;border:none;flex-shrink:0;margin-right:-12px;}
+.hamburger span{display:block;width:22px;height:1.5px;background:var(--black);border-radius:2px;transition:transform .3s ease,opacity .2s ease;}
+.hamburger.open span:nth-child(1){transform:translateY(7.5px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.hamburger.open span:nth-child(3){transform:translateY(-7.5px) rotate(-45deg);}
+
+/* ── MOBILE DRAWER ── */
+.mobile-drawer{display:none;position:fixed;top:60px;left:0;right:0;bottom:0;background:var(--bg);z-index:490;overflow-y:auto;padding:12px 16px 48px;flex-direction:column;gap:2px;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);}
+.mobile-drawer.open{transform:translateX(0);}
+.mobile-drawer a{display:flex;align-items:center;justify-content:space-between;padding:18px 16px;border-radius:8px;text-decoration:none;font-family:'Fraunces',serif;font-size:1.15rem;font-weight:400;color:var(--black);background:transparent;min-height:60px;transition:background .15s;border:none;}
+.mobile-drawer a:hover,.mobile-drawer a:active{background:var(--bg2);}
+.mobile-drawer a .arrow{color:var(--faint);font-size:1rem;font-family:'DM Sans',sans-serif;font-weight:300;}
+.drawer-divider{height:1px;background:var(--border);margin:12px 0;}
+.drawer-cta{margin-top:4px;background:var(--black)!important;color:var(--bg)!important;border-radius:100px!important;}
+.drawer-cta .arrow{color:rgba(245,244,239,.35)!important;}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:grid;place-items:center;padding:100px 48px 80px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:.4;pointer-events:none;}
+.hero-blob{position:absolute;width:700px;height:500px;background:radial-gradient(ellipse,rgba(42,92,255,.08) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%);animation:blobFloat 8s ease-in-out infinite;pointer-events:none;}
+@keyframes blobFloat{0%,100%{transform:translate(-50%,-60%) scale(1);}50%{transform:translate(-50%,-55%) scale(1.1);}}
+.hero-inner{position:relative;z-index:1;max-width:860px;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:100px;padding:6px 16px 6px 10px;font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:36px;box-shadow:0 1px 3px rgba(0,0,0,.06);animation:fadeUp .7s ease both;}
+.hero-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(26,122,74,.2)}50%{box-shadow:0 0 0 6px rgba(26,122,74,.1)}}
+.hero-h1{font-family:'Fraunces',serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:900;line-height:.95;letter-spacing:-.03em;color:var(--black);margin-bottom:28px;animation:fadeUp .7s .1s ease both;}
+.hero-h1 .line2{font-style:italic;font-weight:300;color:var(--accent);}
+.hero-sub{font-size:1.05rem;font-weight:300;color:var(--text2);line-height:1.75;max-width:520px;margin:0 auto 44px;animation:fadeUp .7s .2s ease both;}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;animation:fadeUp .7s .3s ease both;}
+.btn-hero-primary{display:inline-flex;align-items:center;gap:8px;background:var(--black);color:var(--bg);padding:15px 30px;border-radius:100px;font-size:.9rem;font-weight:500;text-decoration:none;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 2px 8px rgba(0,0,0,.15);min-height:48px;}
+.btn-hero-primary:hover{background:#222;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.18);}
+.btn-hero-secondary{display:inline-flex;align-items:center;gap:6px;color:var(--text2);padding:15px 26px;border-radius:100px;font-size:.9rem;font-weight:400;text-decoration:none;border:1px solid var(--border2);transition:all .2s;background:var(--white);min-height:48px;}
+.btn-hero-secondary:hover{border-color:var(--text);color:var(--black);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TICKER ── */
+.ticker-wrap{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;display:flex;align-items:center;}
+.ticker-label-inline{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);white-space:nowrap;padding:0 28px;flex-shrink:0;border-right:1px solid var(--border);}
+.ticker-inner{display:flex;align-items:center;width:max-content;animation:scroll 28s linear infinite;padding-left:28px;}
+.ticker-inner:hover{animation-play-state:paused;}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{padding:0 36px;font-size:.78rem;font-weight:500;color:var(--muted);white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;}
+.ticker-sep{color:var(--border2);font-size:.6rem;}
+
+/* ── SHARED ── */
+section{padding:100px 48px;}
+.section-max{max-width:1160px;margin:0 auto;}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:block;}
+.section-h2{font-family:'Fraunces',serif;font-size:clamp(2.2rem,4vw,3.8rem);font-weight:700;line-height:1.05;letter-spacing:-.025em;color:var(--black);margin-bottom:20px;}
+.section-h2 em{font-style:italic;font-weight:300;}
+.section-p{font-size:.95rem;font-weight:300;color:var(--text2);line-height:1.8;max-width:480px;}
+
+/* ── STATS ── */
+.stats-section{background:var(--black);padding:80px 48px;}
+.stats-grid{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
+.stat-item{padding:0 40px;border-right:1px solid #222;}
+.stat-item:first-child{padding-left:0;}
+.stat-item:last-child{border-right:none;}
+.stat-num{font-family:'Fraunces',serif;font-size:3rem;font-weight:900;line-height:1;color:#fff;letter-spacing:-.03em;margin-bottom:8px;}
+.stat-num span{color:var(--accent);}
+.stat-label{font-size:.78rem;font-weight:400;color:#666;letter-spacing:.01em;line-height:1.5;}
+
+/* ── ORIGIN ── */
+.origin-section{background:var(--bg2);}
+.origin-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.origin-left .section-p{max-width:100%;}
+.origin-quote{margin-top:40px;padding:28px 32px;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--black);border-radius:12px;}
+.origin-quote blockquote{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:300;font-style:italic;color:var(--black);line-height:1.65;margin-bottom:14px;}
+.origin-quote cite{font-size:.75rem;font-weight:500;color:var(--muted);letter-spacing:.02em;font-style:normal;}
+.origin-right{display:flex;flex-direction:column;gap:24px;}
+.origin-numbers{background:var(--black);border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:28px;}
+.origin-num-item{display:flex;flex-direction:column;gap:6px;}
+.origin-big-num{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:900;line-height:1;color:#fff;letter-spacing:-.03em;}
+.origin-num-label{font-size:.78rem;font-weight:300;color:#666;line-height:1.5;}
+.origin-partners{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:28px;}
+.origin-partner-label{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.origin-partner-name{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--black);margin-bottom:10px;letter-spacing:-.01em;}
+.origin-partner-desc{font-size:.8rem;font-weight:300;color:var(--text2);line-height:1.7;}
+
+/* ── EVAL ── */
+.eval-section{background:var(--bg);}
+.eval-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.eval-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:36px 32px;display:flex;flex-direction:column;gap:16px;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;}
+.eval-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.08);border-color:var(--text);}
+.eval-icon{font-size:1.6rem;}
+.eval-h3{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--black);letter-spacing:-.02em;}
+.eval-p{font-size:.82rem;font-weight:300;color:var(--text2);line-height:1.8;flex:1;}
+.eval-example{margin-top:auto;padding:16px 18px;background:var(--bg2);border-radius:10px;display:flex;flex-direction:column;gap:6px;}
+.eval-ex-label{font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.eval-ex-text{font-size:.78rem;font-weight:400;color:var(--text2);line-height:1.6;}
+
+/* ── PHILOSOPHY ── */
+.philosophy-section{background:var(--bg2);}
+.philosophy-layout{display:grid;grid-template-columns:1fr 2fr;gap:80px;align-items:start;}
+.philosophy-tenets{display:flex;flex-direction:column;}
+.tenet{display:grid;grid-template-columns:40px 1fr;gap:24px;align-items:start;padding:32px 0;border-bottom:1px solid var(--border);}
+.tenet:first-child{padding-top:0;}
+.tenet:last-child{border-bottom:none;padding-bottom:0;}
+.tenet-num{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:500;color:var(--faint);letter-spacing:.05em;padding-top:4px;}
+.tenet-h3{font-size:.95rem;font-weight:500;color:var(--black);margin-bottom:8px;line-height:1.4;}
+.tenet-p{font-size:.82rem;font-weight:300;color:var(--text2);line-height:1.75;}
+
+/* ── PRODUCTS ── */
+.products-section{background:var(--bg);}
+.products-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:56px;gap:32px;flex-wrap:wrap;}
+.products-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.product-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:36px 32px;text-decoration:none;display:flex;flex-direction:column;position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;}
+.product-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.1);border-color:var(--text);}
+.product-card-bg{position:absolute;inset:0;opacity:0;transition:opacity .4s;}
+.product-card:hover .product-card-bg{opacity:1;}
+.card-voice-arena .product-card-bg{background:radial-gradient(circle at 80% 20%,rgba(42,92,255,.05) 0%,transparent 60%);}
+.card-asr .product-card-bg{background:radial-gradient(circle at 80% 20%,rgba(26,122,74,.05) 0%,transparent 60%);}
+.card-human .product-card-bg{background:radial-gradient(circle at 80% 20%,rgba(180,100,40,.05) 0%,transparent 60%);}
+.product-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;}
+.product-icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.card-voice-arena .product-icon-wrap{background:#eff3ff;}
+.card-asr .product-icon-wrap{background:#edf7f2;}
+.card-human .product-icon-wrap{background:#fdf3eb;}
+.product-arrow{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--muted);transition:all .25s;flex-shrink:0;}
+.product-card:hover .product-arrow{background:var(--black);border-color:var(--black);color:var(--bg);transform:rotate(45deg);}
+.product-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.product-h3{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;color:var(--black);margin-bottom:12px;}
+.product-desc{font-size:.825rem;font-weight:300;color:var(--text2);line-height:1.75;margin-bottom:28px;flex:1;}
+.product-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:24px;border-top:1px solid var(--border);}
+.product-features li{display:flex;align-items:center;gap:10px;font-size:.775rem;font-weight:400;color:var(--text2);}
+.product-features li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--faint);flex-shrink:0;}
+
+/* ── TRUST ── */
+.trust-section{background:var(--bg2);}
+.trust-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;margin-top:56px;background:var(--border);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+.trust-card{background:var(--white);padding:40px;transition:background .2s;}
+.trust-card:hover{background:var(--bg);}
+.trust-num{font-family:'Fraunces',serif;font-size:2.5rem;font-weight:700;color:var(--black);line-height:1;margin-bottom:14px;letter-spacing:-.03em;}
+.trust-h3{font-size:.9rem;font-weight:500;color:var(--black);margin-bottom:10px;}
+.trust-p{font-size:.82rem;font-weight:300;color:var(--text2);line-height:1.75;}
+
+/* ── LANGUAGES ── */
+.languages-section{background:var(--bg);}
+.lang-header{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;margin-bottom:56px;}
+.lang-pills{display:flex;flex-wrap:wrap;gap:8px;padding-top:16px;}
+.lang-pill{background:var(--white);border:1px solid var(--border);border-radius:100px;padding:10px 20px;font-size:.78rem;font-weight:400;color:var(--text2);transition:all .2s;cursor:default;min-height:40px;display:inline-flex;align-items:center;}
+.lang-pill:hover{border-color:var(--black);color:var(--black);background:var(--bg3);transform:scale(1.04);}
+.lang-pill.hero-lang{background:var(--black);color:var(--bg);border-color:var(--black);}
+.lang-pill.hero-lang:hover{background:#333;border-color:#333;}
+
+/* ── RESEARCH CARDS ── */
+.research-section{background:var(--bg2);}
+.research-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:56px;}
+.research-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:36px;text-decoration:none;display:block;position:relative;overflow:hidden;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s;}
+.research-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.08);border-color:var(--black);}
+.research-card-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:block;}
+.research-card h3{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;letter-spacing:-.02em;color:var(--black);margin-bottom:12px;line-height:1.25;}
+.research-card p{font-size:.82rem;font-weight:300;color:var(--text2);line-height:1.75;margin-bottom:24px;}
+.research-card-link{font-size:.78rem;font-weight:500;color:var(--accent);display:inline-flex;align-items:center;gap:6px;transition:gap .2s;}
+.research-card:hover .research-card-link{gap:10px;}
+.research-card-link::after{content:'→';}
+
+/* ── CONTACT SECTION ── */
+.contact-section{background:var(--bg);}
+.contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.contact-form{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:40px;}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.form-group:last-of-type{margin-bottom:28px;}
+.form-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.form-input,.form-select,.form-textarea{padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:300;color:var(--text);background:var(--bg);transition:border-color .2s,box-shadow .2s;outline:none;appearance:none;-webkit-appearance:none;width:100%;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(42,92,255,.1);}
+.form-textarea{resize:vertical;min-height:100px;}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8a7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;}
+.form-submit{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--black);color:var(--bg);padding:14px 28px;border-radius:100px;font-size:.9rem;font-weight:500;border:none;cursor:pointer;transition:background .2s,transform .15s;width:100%;min-height:48px;font-family:'DM Sans',sans-serif;}
+.form-submit:hover{background:#333;transform:translateY(-1px);}
+.contact-info{display:flex;flex-direction:column;gap:32px;}
+.contact-info-item h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--black);margin-bottom:8px;}
+.contact-info-item p{font-size:.875rem;font-weight:300;color:var(--text2);line-height:1.7;}
+.contact-info-item a{color:var(--accent);text-decoration:none;font-weight:500;}
+.contact-info-item a:hover{text-decoration:underline;}
+.contact-links{display:flex;flex-direction:column;gap:12px;margin-top:8px;}
+.contact-link-btn{display:flex;align-items:center;gap:12px;padding:14px 20px;border:1px solid var(--border);border-radius:12px;text-decoration:none;color:var(--text);background:var(--white);transition:all .2s;min-height:52px;}
+.contact-link-btn:hover{border-color:var(--black);background:var(--bg);}
+.contact-link-btn .link-icon{font-size:1.2rem;flex-shrink:0;}
+.contact-link-btn .link-text{flex:1;}
+.contact-link-btn .link-label{font-size:.78rem;font-weight:500;color:var(--black);display:block;}
+.contact-link-btn .link-sub{font-size:.7rem;color:var(--muted);}
+.contact-link-btn .link-arrow{color:var(--muted);font-size:.85rem;}
+
+/* ── CTA ── */
+.cta-section{background:var(--black);padding:120px 48px;text-align:center;position:relative;overflow:hidden;}
+.cta-blob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(42,92,255,.15) 0%,transparent 70%);pointer-events:none;}
+.cta-inner{position:relative;z-index:1;}
+.cta-h2{font-family:'Fraunces',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;line-height:.95;letter-spacing:-.03em;color:#fff;margin-bottom:24px;}
+.cta-h2 em{font-style:italic;font-weight:300;color:var(--accent);}
+.cta-sub{font-size:1rem;font-weight:300;color:#888;line-height:1.7;max-width:440px;margin:0 auto 44px;}
+.cta-btns{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.btn-cta-primary{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--black);padding:15px 30px;border-radius:100px;font-size:.9rem;font-weight:500;text-decoration:none;transition:background .2s,transform .15s;min-height:48px;}
+.btn-cta-primary:hover{background:#eee;transform:translateY(-2px);}
+.btn-cta-ghost{display:inline-flex;align-items:center;gap:8px;border:1px solid #333;color:#888;padding:15px 26px;border-radius:100px;font-size:.9rem;font-weight:400;text-decoration:none;transition:all .2s;min-height:48px;}
+.btn-cta-ghost:hover{border-color:#666;color:#ccc;}
+
+/* ── FOOTER ── */
+footer{background:var(--black);border-top:1px solid #1a1a1a;padding:48px;}
+.footer-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:32px;}
+.footer-logo{display:flex;align-items:center;gap:10px;text-decoration:none;min-height:44px;}
+.footer-logo-text{font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.footer-links{display:flex;gap:0;list-style:none;justify-content:center;flex-wrap:wrap;}
+.footer-links a{font-size:.75rem;color:#555;text-decoration:none;transition:color .2s;padding:8px 16px;min-height:40px;display:flex;align-items:center;}
+.footer-links a:hover{color:#999;}
+.footer-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;}
+.footer-copy{font-size:.7rem;color:#333;font-family:'JetBrains Mono',monospace;}
+.footer-social{display:flex;gap:12px;}
+.footer-social a{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid #222;border-radius:50%;color:#555;text-decoration:none;font-size:.85rem;transition:all .2s;}
+.footer-social a:hover{border-color:#555;color:#999;}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:.1s;}
+.reveal-delay-2{transition-delay:.2s;}
+.reveal-delay-3{transition-delay:.3s;}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  body{cursor:auto;}
+  .cursor,.cursor-ring{display:none;}
+  nav{padding:0 20px;height:60px;}
+  .nav-center,.nav-right{display:none;}
+  .hamburger{display:flex;}
+  .mobile-drawer{display:flex;}
+  section{padding:64px 24px;}
+  .stats-section{padding:60px 24px;}
+  .hero{padding:90px 24px 64px;}
+  .hero-h1{font-size:clamp(2.4rem,9vw,3.5rem);}
+  .hero-sub{font-size:.95rem;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:32px;}
+  .stat-item{border-right:none;padding:0;}
+  .stat-item:nth-child(odd){border-right:1px solid #222;padding-right:20px;}
+  .origin-layout,.contact-layout,.philosophy-layout{grid-template-columns:1fr;gap:48px;}
+  .eval-grid,.products-grid,.research-grid{grid-template-columns:1fr;}
+  .trust-grid{grid-template-columns:1fr;}
+  .lang-header{grid-template-columns:1fr;gap:32px;}
+  .lang-pills{padding-top:0;}
+  .products-header{flex-direction:column;}
+  .cta-section{padding:80px 24px;}
+  footer{padding:40px 24px;}
+  .footer-inner{grid-template-columns:1fr;gap:24px;}
+  .footer-right{align-items:flex-start;}
+  .ticker-label-inline{display:none;}
+}
+@media(max-width:480px){
+  .hero-actions{flex-direction:column;align-items:stretch;}
+  .btn-hero-primary,.btn-hero-secondary{justify-content:center;}
+  .cta-btns{flex-direction:column;align-items:stretch;max-width:280px;margin:0 auto;}
+  .btn-cta-primary,.btn-cta-ghost{justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- ── NAV ── -->
+<nav id="nav">
+  <a href="https://ai.joshtalks.com" class="nav-logo" aria-label="Josh Talks AI home">
+    <svg viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect width="26" height="26" rx="7" fill="#0a0a08"/><path d="M7 8h5.5c2.5 0 4 1.2 4 3.2s-1.5 3.2-4 3.2H9.5V18H7V8zm2.5 4.8h2.7c1.2 0 1.8-.5 1.8-1.6s-.6-1.6-1.8-1.6H9.5v3.2z" fill="#f5f4ef"/></svg>
+    <span class="nav-logo-text">Josh Talks AI</span>
+  </a>
+  <div class="nav-center">
+    <ul class="nav-links-desktop">
+      <li><a href="#story">Our Story</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#datasets">Datasets</a></li>
+      <li><a href="#research">Research</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+  <div class="nav-right">
+    <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="nav-btn nav-btn-ghost">Leaderboard ↗</a>
+    <a href="#contact" class="nav-btn nav-btn-fill">Contact Us</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ── MOBILE DRAWER ── -->
+<nav class="mobile-drawer" id="mobileDrawer" aria-label="Mobile navigation" aria-hidden="true">
+  <a href="#story" class="drawer-link"><span>Our Story</span><span class="arrow">→</span></a>
+  <a href="#products" class="drawer-link"><span>Products</span><span class="arrow">→</span></a>
+  <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" class="drawer-link"><span>ASR Datasets ↗</span><span class="arrow">→</span></a>
+  <a href="https://voice-of-india.ai.joshtalks.com" target="_blank" rel="noopener" class="drawer-link"><span>Voice of India ↗</span><span class="arrow">→</span></a>
+  <a href="https://ai.joshtalks.com/research/human-1" target="_blank" rel="noopener" class="drawer-link"><span>Human-1 ↗</span><span class="arrow">→</span></a>
+  <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="drawer-link"><span>TTS Leaderboard ↗</span><span class="arrow">→</span></a>
+  <a href="#research" class="drawer-link"><span>Research</span><span class="arrow">→</span></a>
+  <div class="drawer-divider"></div>
+  <a href="#contact" class="drawer-link drawer-cta"><span>Contact Us</span><span class="arrow">→</span></a>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero" id="hero">
+  <div class="hero-blob"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      Voice AI Infrastructure
+    </div>
+    <h1 class="hero-h1">
+      The Data &amp; Evaluation<br>
+      <span class="line2">Layer for Voice AI</span>
+    </h1>
+    <p class="hero-sub">Research-grade voice datasets, model evaluations, and AI infrastructure — built for frontier labs and enterprise teams training the next generation of voice models.</p>
+    <div class="hero-actions">
+      <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" class="btn-hero-primary">Explore Datasets →</a>
+      <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="btn-hero-secondary">View TTS Leaderboard ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-label-inline">Customers across our portfolio</div>
+  <div class="ticker-inner">
+    <span class="ticker-item">OpenAI</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Meta</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Amazon</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Google</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">WhatsApp</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Spotify</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">United Nations</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">IFC</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">OpenAI</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Meta</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Amazon</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Google</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">WhatsApp</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">Spotify</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">United Nations</span><span class="ticker-sep">·</span>
+    <span class="ticker-item">IFC</span><span class="ticker-sep">·</span>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-item reveal">
+      <div class="stat-num">10<span>M+</span></div>
+      <div class="stat-label">Hours annual production capacity (patented pipeline)</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-1">
+      <div class="stat-num">15</div>
+      <div class="stat-label">Indian languages in the Voice of India benchmark</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-2">
+      <div class="stat-num">36<span>K+</span></div>
+      <div class="stat-label">Real speakers across 139 regional clusters</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-3">
+      <div class="stat-num">44<span>K+</span></div>
+      <div class="stat-label">Human pairwise TTS evaluations on VoiceArena</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── WHY WE EXIST ── -->
+<section class="origin-section" id="story">
+  <div class="section-max">
+    <div class="origin-layout">
+      <div class="origin-left">
+        <span class="eyebrow reveal">Our Story</span>
+        <h2 class="section-h2 reveal">Why we exist.</h2>
+        <p class="section-p reveal">Josh Talks started as India's largest vernacular storytelling platform — reaching millions of people across districts, languages, and socioeconomic contexts who rarely saw themselves represented in mainstream media.</p>
+        <p class="section-p reveal" style="margin-top:16px">That reach revealed something fundamental: the voice AI systems being built for India were trained on data that didn't sound like India. Clean studio recordings, scripted sentences, urban accents. Real speech — spontaneous, emotional, dialect-rich, code-switched — was missing from training data that would power the next generation of voice technology.</p>
+        <p class="section-p reveal" style="margin-top:16px">So we built the infrastructure to collect it, curate it, and make it available to the researchers and labs who could use it. That work became Josh Talks AI.</p>
+        <div class="origin-quote reveal">
+          <blockquote>"Voice AI has learned to recognise speech and generate speech. What it has not yet learned well is how to participate in conversation."</blockquote>
+          <cite>— Shobhit Banga, Co-Founder, Josh Talks</cite>
+        </div>
+      </div>
+      <div class="origin-right reveal">
+        <div class="origin-numbers">
+          <div class="origin-num-item">
+            <div class="origin-big-num">15</div>
+            <div class="origin-num-label">Indian languages in the Voice of India benchmark</div>
+          </div>
+          <div class="origin-num-item">
+            <div class="origin-big-num">36K+</div>
+            <div class="origin-num-label">Real speakers across 139 regional clusters</div>
+          </div>
+          <div class="origin-num-item">
+            <div class="origin-big-num">26K</div>
+            <div class="origin-num-label">Hours of conversational Hindi for the world's first open full-duplex model</div>
+          </div>
+        </div>
+        <div class="origin-partners">
+          <div class="origin-partner-label">Research collaboration</div>
+          <div class="origin-partner-name">AI4Bharat · IIT Madras</div>
+          <div class="origin-partner-desc">Academic partner for Voice of India — designing dataset architecture, evaluation protocols, and ensuring global research standards.</div>
+          <a href="https://voice-of-india.ai.joshtalks.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-size:.8rem;font-weight:500;color:var(--accent);text-decoration:none;">View Voice of India →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── WHY EVALUATION MATTERS ── -->
+<section class="eval-section" id="evaluation">
+  <div class="section-max">
+    <span class="eyebrow reveal">Why It Matters</span>
+    <h2 class="section-h2 reveal">Models improve when<br><em>measured well.</em></h2>
+    <p class="section-p reveal" style="margin-bottom:56px;max-width:600px">Voice AI evaluation is harder than it looks. Automated metrics miss what actually matters to listeners. Without rigorous human measurement, model builders can't tell what's improving and what isn't.</p>
+    <div class="eval-grid">
+      <div class="eval-card reveal">
+        <div class="eval-icon">📊</div>
+        <h3 class="eval-h3">Better Data</h3>
+        <p class="eval-p">Models are bounded by their training data. Data that fails to represent the accents, dialects, and speaking contexts of real users produces models that fail real users — regardless of benchmark scores on clean speech.</p>
+        <div class="eval-example">
+          <span class="eval-ex-label">Finding from Voice of India</span>
+          <span class="eval-ex-text">Major global models show significant performance gaps on Indian accents and regional dialects — even those claiming multilingual support.</span>
+        </div>
+      </div>
+      <div class="eval-card reveal reveal-delay-1">
+        <div class="eval-icon">🔬</div>
+        <h3 class="eval-h3">Better Evaluation</h3>
+        <p class="eval-p">Automated metrics like WER penalise natural spelling variation and miss what listeners actually notice. Human pairwise evaluation surfaces failures in naturalness, expressiveness, and contextual appropriateness that no automated metric can detect at scale.</p>
+        <div class="eval-example">
+          <span class="eval-ex-label">VoiceArena approach</span>
+          <span class="eval-ex-text">Blind pairwise votes from real listeners across 9 TTS models and 6 languages. No brand bias. No lab access. Public results.</span>
+        </div>
+      </div>
+      <div class="eval-card reveal reveal-delay-2">
+        <div class="eval-icon">🚀</div>
+        <h3 class="eval-h3">Better Models</h3>
+        <p class="eval-p">When evaluation is accurate and data is representative, model builders can identify exactly what to fix — and verify that fixes actually work. The feedback loop between measurement and improvement is what drives progress in voice AI.</p>
+        <div class="eval-example">
+          <span class="eval-ex-label">The goal</span>
+          <span class="eval-ex-text">Voice AI systems that understand how people in India actually speak — not how studio recordings assume they speak.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RESEARCH PHILOSOPHY ── -->
+<section class="philosophy-section" id="philosophy">
+  <div class="section-max">
+    <div class="philosophy-layout">
+      <div>
+        <span class="eyebrow reveal">Research Philosophy</span>
+        <h2 class="section-h2 reveal">The principles<br><em>behind the work.</em></h2>
+      </div>
+      <div class="philosophy-tenets">
+        <div class="tenet reveal"><span class="tenet-num">01</span><div><h3 class="tenet-h3">Models improve when measured.</h3><p class="tenet-p">Evaluation is not a final check — it is how progress happens. Without independent, rigorous measurement, model builders cannot distinguish real improvement from benchmark overfitting.</p></div></div>
+        <div class="tenet reveal reveal-delay-1"><span class="tenet-num">02</span><div><h3 class="tenet-h3">Data improves when audited.</h3><p class="tenet-p">Quality is not a one-time property of a dataset. It requires continuous verification — human review, anomaly detection, and full traceability from source to label.</p></div></div>
+        <div class="tenet reveal reveal-delay-2"><span class="tenet-num">03</span><div><h3 class="tenet-h3">Evaluation improves when humans stay in the loop.</h3><p class="tenet-p">Automated metrics are fast and scalable. Human judgment is what they're approximating. For voice AI — where what matters is how speech sounds to a listener — human evaluation is irreplaceable.</p></div></div>
+        <div class="tenet reveal reveal-delay-3"><span class="tenet-num">04</span><div><h3 class="tenet-h3">Diversity is not a footnote.</h3><p class="tenet-p">India has 22 constitutionally recognised languages and hundreds of dialects. Building voice AI that works for India means building for that diversity from day one — not retrofitting it later.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRODUCTS ── -->
+<section class="products-section" id="products">
+  <div class="section-max">
+    <div class="products-header">
+      <div>
+        <span class="eyebrow">What We Build</span>
+        <h2 class="section-h2">Three products.<br><em>One infrastructure.</em></h2>
+      </div>
+      <p class="section-p">From raw data collection to model evaluation — everything frontier voice AI teams need to train, measure, and improve their models.</p>
+    </div>
+    <div class="products-grid">
+      <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="product-card card-voice-arena reveal">
+        <div class="product-card-bg"></div>
+        <div class="product-card-top">
+          <div class="product-icon-wrap">🏟️</div>
+          <div class="product-arrow">↗</div>
+        </div>
+        <div class="product-eyebrow">Evaluation Platform</div>
+        <h3 class="product-h3">VoiceArena</h3>
+        <p class="product-desc">The measurement layer for voice AI. Human pairwise evaluations across leading TTS models and 6 languages — with a live public leaderboard.</p>
+        <ul class="product-features">
+          <li>44,000+ human pairwise votes</li>
+          <li>TTS, STT, S2S, and voice cloning evals</li>
+          <li>Blind evaluation — zero brand bias</li>
+          <li>Public leaderboards and research access</li>
+        </ul>
+      </a>
+      <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" class="product-card card-asr reveal reveal-delay-1">
+        <div class="product-card-bg"></div>
+        <div class="product-card-top">
+          <div class="product-icon-wrap">🎙️</div>
+          <div class="product-arrow">↗</div>
+        </div>
+        <div class="product-eyebrow">Data Products</div>
+        <h3 class="product-h3">ASR Datasets</h3>
+        <p class="product-desc">Research-grade conversational and multi-speaker audio datasets built from grassroots India — across 12+ languages, dialects, accents, and real-world socioeconomic contexts.</p>
+        <ul class="product-features">
+          <li>12+ Indian languages including rare dialects</li>
+          <li>Channel-separated conversational audio</li>
+          <li>Emotion-annotated and multi-speaker sets</li>
+          <li>5-level human-in-the-loop annotation</li>
+        </ul>
+      </a>
+      <a href="https://ai.joshtalks.com/research/human-1" target="_blank" rel="noopener" class="product-card card-human reveal reveal-delay-2">
+        <div class="product-card-bg"></div>
+        <div class="product-card-top">
+          <div class="product-icon-wrap">🧬</div>
+          <div class="product-arrow">↗</div>
+        </div>
+        <div class="product-eyebrow">Research</div>
+        <h3 class="product-h3">Human-1</h3>
+        <p class="product-desc">Josh Talks AI's foundational research initiative — voice model behaviour across Indian languages. Co-developed with AI4Bharat at IIT Madras.</p>
+        <ul class="product-features">
+          <li>15 Indian languages, 139 regional clusters</li>
+          <li>36,000+ real speakers; unscripted telephonic speech</li>
+          <li>Closed-source benchmark, open evaluation access</li>
+          <li>Methodology published; research collaboration welcome</li>
+        </ul>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRUST ── -->
+<section class="trust-section">
+  <div class="section-max">
+    <span class="eyebrow reveal">Data Quality</span>
+    <h2 class="section-h2 reveal">Data you can <em>trust.</em></h2>
+    <div class="trust-grid">
+      <div class="trust-card reveal">
+        <div class="trust-num">5×</div>
+        <h3 class="trust-h3">Human-in-the-loop annotation</h3>
+        <p class="trust-p">Five levels of human review with automated anomaly detection — keeping label error rates exceptionally low across every dataset we produce.</p>
+      </div>
+      <div class="trust-card reveal reveal-delay-1">
+        <div class="trust-num">ISO</div>
+        <h3 class="trust-h3">Enterprise-grade security</h3>
+        <p class="trust-p">Air-gapped labs, ISO-27001-aligned cloud practices, and full per-file audit trails — built for enterprise compliance teams with the highest security requirements.</p>
+      </div>
+      <div class="trust-card reveal reveal-delay-2">
+        <div class="trust-num">100%</div>
+        <h3 class="trust-h3">Ethical by design</h3>
+        <p class="trust-p">Consent workflows meeting global standards, automated PII redaction, and contributor revenue-share models — compliant with international data regulations.</p>
+      </div>
+      <div class="trust-card reveal reveal-delay-3">
+        <div class="trust-num">Real</div>
+        <h3 class="trust-h3">Grassroots diversity</h3>
+        <p class="trust-p">Collected from real speakers across states, socioeconomic tiers, and dialect regions — exactly where your product will actually be used. Not studio audio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DATASETS / LANGUAGES ── -->
+<section class="languages-section" id="datasets">
+  <div class="section-max">
+    <div class="lang-header">
+      <div>
+        <span class="eyebrow reveal">Language Coverage</span>
+        <h2 class="section-h2 reveal">Built for India's<br><em>linguistic depth.</em></h2>
+        <p class="section-p reveal" style="margin-top:16px">We don't just cover languages — we go deep into dialects, accents, and real speakers. The kind of data that trains models to understand how people actually speak.</p>
+        <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;margin-top:28px;padding:13px 26px;background:var(--black);color:var(--bg);border-radius:100px;font-size:.85rem;font-weight:500;text-decoration:none;transition:background .2s;min-height:48px;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--black)'">Browse Dataset Catalogue →</a>
+      </div>
+      <div class="lang-pills reveal">
+        <span class="lang-pill hero-lang">Hindi</span>
+        <span class="lang-pill hero-lang">Tamil</span>
+        <span class="lang-pill hero-lang">Telugu</span>
+        <span class="lang-pill hero-lang">Marathi</span>
+        <span class="lang-pill hero-lang">Bengali</span>
+        <span class="lang-pill">Kannada</span>
+        <span class="lang-pill">Malayalam</span>
+        <span class="lang-pill">Punjabi</span>
+        <span class="lang-pill">Gujarati</span>
+        <span class="lang-pill">Odia</span>
+        <span class="lang-pill">Assamese</span>
+        <span class="lang-pill">Accented English</span>
+        <span class="lang-pill">Code-switching</span>
+        <span class="lang-pill">Rare Dialects</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RESEARCH ── -->
+<section class="research-section" id="research">
+  <div class="section-max">
+    <span class="eyebrow reveal">Research &amp; Analysis</span>
+    <h2 class="section-h2 reveal">Findings the field<br><em>actually uses.</em></h2>
+    <div class="research-grid">
+      <a href="https://evals.ai.joshtalks.com/blog" target="_blank" rel="noopener" class="research-card reveal">
+        <span class="research-card-tag">TTS Benchmark · 2026</span>
+        <h3>What 44,000 Human Votes Reveal About Where Text-to-Speech Models Actually Fail</h3>
+        <p>An analysis of VoiceArena's multilingual evaluation dataset — 9 models, 6 languages, 44,000+ human pairwise votes. What the data reveals about TTS reliability and multilingual performance.</p>
+        <span class="research-card-link">Read the analysis</span>
+      </a>
+      <a href="https://voice-of-india.ai.joshtalks.com" target="_blank" rel="noopener" class="research-card reveal reveal-delay-1">
+        <span class="research-card-tag">Benchmark · Feb 2026</span>
+        <h3>Voice of India: Global Speech AI Struggles to Understand India</h3>
+        <p>Developed with AI4Bharat at IIT Madras — the first national standard for evaluating ASR systems in India. 15 languages, 36,000+ speakers, 139 regional clusters.</p>
+        <span class="research-card-link">View the benchmark</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTACT ── -->
+<section class="contact-section" id="contact">
+  <div class="section-max">
+    <div class="contact-layout">
+      <div>
+        <span class="eyebrow reveal">Get in Touch</span>
+        <h2 class="section-h2 reveal">Let's build<br><em>together.</em></h2>
+        <p class="section-p reveal" style="margin-bottom:40px;max-width:100%">Talk to our team about datasets, evaluations, or custom research for your voice AI infrastructure.</p>
+        <div class="contact-info">
+          <div class="contact-info-item reveal">
+            <h3>Quick links</h3>
+            <div class="contact-links">
+              <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" class="contact-link-btn">
+                <span class="link-icon">🎙️</span>
+                <span class="link-text"><span class="link-label">Browse ASR Dataset Catalogue</span><span class="link-sub">View all available datasets by language</span></span>
+                <span class="link-arrow">↗</span>
+              </a>
+              <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="contact-link-btn">
+                <span class="link-icon">🏟️</span>
+                <span class="link-text"><span class="link-label">VoiceArena TTS Leaderboard</span><span class="link-sub">Live human evaluation rankings</span></span>
+                <span class="link-arrow">↗</span>
+              </a>
+              <a href="https://voice-of-india.ai.joshtalks.com" target="_blank" rel="noopener" class="contact-link-btn">
+                <span class="link-icon">🗺️</span>
+                <span class="link-text"><span class="link-label">Voice of India Benchmark</span><span class="link-sub">National ASR evaluation standard</span></span>
+                <span class="link-arrow">↗</span>
+              </a>
+              <a href="https://ai.joshtalks.com/research/human-1" target="_blank" rel="noopener" class="contact-link-btn">
+                <span class="link-icon">🧬</span>
+                <span class="link-text"><span class="link-label">Human-1 Research</span><span class="link-sub">Published methodology and findings</span></span>
+                <span class="link-arrow">↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="contact-form">
+          <h3 style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:var(--black);margin-bottom:28px;letter-spacing:-.02em;">Send us a message</h3>
+          <div class="form-group">
+            <label class="form-label" for="name">Your name</label>
+            <input class="form-input" type="text" id="name" name="name" placeholder="Full name" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Work email</label>
+            <input class="form-input" type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="org">Organisation</label>
+            <input class="form-input" type="text" id="org" name="org" placeholder="Company or institution" autocomplete="organization">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="interest">I'm interested in</label>
+            <select class="form-select" id="interest" name="interest">
+              <option value="" disabled selected>Select a topic</option>
+              <option value="datasets">ASR Datasets</option>
+              <option value="voicearena">VoiceArena / TTS Evaluation</option>
+              <option value="voice-of-india">Voice of India Benchmark</option>
+              <option value="human-1">Human-1 Research</option>
+              <option value="custom">Custom data collection</option>
+              <option value="partnership">Research partnership</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="message">Message</label>
+            <textarea class="form-textarea" id="message" name="message" placeholder="Tell us about your project or question..."></textarea>
+          </div>
+          <button type="button" class="form-submit" onclick="handleFormSubmit(this)">Send Message →</button>
+          <p style="font-size:.72rem;color:var(--muted);margin-top:14px;text-align:center">Or email us directly at <a href="mailto:contact@joshtalks.com" style="color:var(--accent);">contact@joshtalks.com</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <div class="cta-blob"></div>
+  <div class="cta-inner">
+    <h2 class="cta-h2 reveal">Build voice AI<br><em>that works.</em></h2>
+    <p class="cta-sub reveal">Research-grade data and independent evaluation for teams that take voice AI seriously.</p>
+    <div class="cta-btns reveal">
+      <a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener" class="btn-cta-primary">Explore Datasets →</a>
+      <a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener" class="btn-cta-ghost">View Leaderboard ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <a href="https://ai.joshtalks.com" class="footer-logo" aria-label="Josh Talks AI home">
+      <svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect width="26" height="26" rx="7" fill="#f5f4ef"/><path d="M7 8h5.5c2.5 0 4 1.2 4 3.2s-1.5 3.2-4 3.2H9.5V18H7V8zm2.5 4.8h2.7c1.2 0 1.8-.5 1.8-1.6s-.6-1.6-1.8-1.6H9.5v3.2z" fill="#0a0a08"/></svg>
+      <span class="footer-logo-text">Josh Talks AI</span>
+    </a>
+    <ul class="footer-links">
+      <li><a href="#story">Our Story</a></li>
+      <li><a href="https://ai.joshtalks.com/catalogue" target="_blank" rel="noopener">ASR Datasets ↗</a></li>
+      <li><a href="https://evals.ai.joshtalks.com" target="_blank" rel="noopener">VoiceArena ↗</a></li>
+      <li><a href="https://voice-of-india.ai.joshtalks.com" target="_blank" rel="noopener">Voice of India ↗</a></li>
+      <li><a href="https://ai.joshtalks.com/research/human-1" target="_blank" rel="noopener">Human-1 ↗</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="footer-right">
+      <span class="footer-copy">© 2026 Josh Talks AI · Part of Josh Talks Group</span>
+      <div class="footer-social">
+        <a href="https://www.linkedin.com/company/josh-talks" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>
+        <a href="https://twitter.com/JoshTalks" target="_blank" rel="noopener" aria-label="Twitter / X">𝕏</a>
+        <a href="https://evals.ai.joshtalks.com/blog" target="_blank" rel="noopener" aria-label="Research blog">✦</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Custom cursor (desktop)
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => {
+  mx=e.clientX; my=e.clientY;
+  cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+});
+(function animRing(){
+  rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+})();
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('cursor-hover'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('cursor-hover'));
+});
+
+// ── Mobile hamburger + drawer
+const hamburger    = document.getElementById('hamburger');
+const mobileDrawer = document.getElementById('mobileDrawer');
+function closeDrawer(){
+  hamburger.classList.remove('open');
+  hamburger.setAttribute('aria-expanded','false');
+  mobileDrawer.classList.remove('open');
+  mobileDrawer.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
+}
+hamburger.addEventListener('click',()=>{
+  const isOpen = mobileDrawer.classList.toggle('open');
+  hamburger.classList.toggle('open',isOpen);
+  hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  mobileDrawer.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+});
+// Close on any drawer link click
+mobileDrawer.querySelectorAll('a').forEach(a=>{
+  a.addEventListener('click', ()=>{ setTimeout(closeDrawer, 100); });
+});
+// Close on outside click
+document.addEventListener('click', e=>{
+  if(mobileDrawer.classList.contains('open') && !mobileDrawer.contains(e.target) && !hamburger.contains(e.target)){
+    closeDrawer();
+  }
+});
+// Close on escape
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
+
+// ── Scroll reveal
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); revealObs.unobserve(e.target); }});
+},{ threshold:.1, rootMargin:'0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
+
+// ── Stat counter animation
+const statObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const el   = e.target;
+    const orig = el.dataset.orig || el.innerHTML;
+    el.dataset.orig = orig;
+    // find the leading number in the HTML
+    const textNode = el.childNodes[0];
+    const numStr   = textNode ? textNode.textContent.trim() : '';
+    const num      = parseFloat(numStr);
+    if(!num){ statObs.unobserve(el); return; }
+    const suffix   = el.innerHTML.replace(numStr,'');
+    const start = performance.now();
+    const dur   = 1400;
+    (function tick(now){
+      const p    = Math.min((now-start)/dur,1);
+      const ease = 1-Math.pow(1-p,3);
+      const val  = Math.round(num*ease*10)/10;
+      el.innerHTML = val + suffix;
+      if(p<1) requestAnimationFrame(tick);
+      else el.innerHTML = orig;
+    })(start);
+    statObs.unobserve(el);
+  });
+},{ threshold:.6 });
+document.querySelectorAll('.stat-num').forEach(el=>statObs.observe(el));
+
+// ── Nav shrink on scroll
+const nav = document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  if(window.scrollY>60){
+    nav.style.background='rgba(245,244,239,.97)';
+    nav.style.boxShadow='0 1px 0 rgba(0,0,0,.06)';
+  } else {
+    nav.style.background='rgba(245,244,239,.88)';
+    nav.style.boxShadow='none';
+  }
+},{passive:true});
+
+// ── Smooth scroll for anchor links (offset for fixed nav)
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    const target = document.querySelector(a.getAttribute('href'));
+    if(!target) return;
+    e.preventDefault();
+    const offset = 72;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior:'smooth' });
+  });
+});
+
+// ── Contact form handler
+function handleFormSubmit(btn){
+  const name    = document.getElementById('name').value.trim();
+  const email   = document.getElementById('email').value.trim();
+  const interest= document.getElementById('interest').value;
+  const message = document.getElementById('message').value.trim();
+  if(!name || !email){
+    btn.textContent = 'Please fill in name and email';
+    btn.style.background = '#c0392b';
+    setTimeout(()=>{ btn.textContent='Send Message →'; btn.style.background=''; },2500);
+    return;
+  }
+  // Build mailto as fallback — in production replace with your API endpoint
+  const subject = encodeURIComponent('Josh Talks AI Enquiry: ' + (interest || 'General'));
+  const body    = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nInterest: ${interest}\n\n${message}`);
+  window.location.href = `mailto:contact@joshtalks.com?subject=${subject}&body=${body}`;
+  btn.textContent = 'Opening your email client…';
+  btn.style.background = 'var(--green)';
+  setTimeout(()=>{ btn.textContent='Send Message →'; btn.style.background=''; },3000);
+}
+</script>
+</body>
+</html>
